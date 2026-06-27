@@ -2,31 +2,16 @@ name: Build HiFiOS x86
 
 on:
   workflow_dispatch:
-    inputs:
-      release:
-        description: "Debian/Ubuntu release"
-        required: true
-        default: "trixie"
-        type: choice
-        options:
-          - trixie
-          - bookworm
-      branch:
-        description: "Kernel branch"
-        required: true
-        default: "current"
-        type: choice
-        options:
-          - current
-          - edge
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
-      - name: Checkout hifios
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Free disk space
         run: |
@@ -36,29 +21,29 @@ jobs:
             /opt/hostedtoolcache \
             /usr/local/lib/android
 
-      - name: Build HiFiOS x86 image
+      - name: Enable community boards
         run: |
-          set -e
-          chmod +x compile.sh
+          mkdir -p userpatches
+          echo 'EXPERT="yes"' >> userpatches/config-example.conf
+          echo 'BUILD_ALL="yes"' >> userpatches/config-example.conf
 
+      - name: Build HiFiOS
+        run: |
+          chmod +x compile.sh
           ./compile.sh \
-            BOARD=x86 \
-            BRANCH=${{ github.event.inputs.branch }} \
-            RELEASE=${{ github.event.inputs.release }} \
+            BOARD=x64 \
+            BRANCH=current \
+            RELEASE=trixie \
             BUILD_DESKTOP=no \
             BUILD_MINIMAL=yes \
             ENABLE_EXTENSIONS=hifios \
-            COMPILE_MORE_TOOLS=no \
-            SHOW_LEAVES=no \
-            CLEAN_LEVEL="none" \
             KERNEL_CONFIGURE=no \
+            CLEAN_LEVEL="none"
             2>&1 | tee build.log
 
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: hifios-x86-${{ github.run_number }}
+          name: hifios-x86
           path: |
             output/images/*.img*
             output/images/*.sha
-          retention-days: 14
