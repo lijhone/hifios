@@ -1,4 +1,4 @@
-name: Build HiFiOS x86_64
+name: Build HiFiOS x86
 
 on:
   workflow_dispatch:
@@ -23,15 +23,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build HiFiOS x86_64
 
     steps:
       - name: Checkout hifios
         uses: actions/checkout@v4
-        with:
-          repository: lijhone/hifios
-          ref: main
-          fetch-depth: 1
 
       - name: Free disk space
         run: |
@@ -41,13 +36,13 @@ jobs:
             /opt/hostedtoolcache \
             /usr/local/lib/android
 
-      - name: Build HiFiOS image
+      - name: Build HiFiOS x86 image
         run: |
           set -e
           chmod +x compile.sh
 
           ./compile.sh \
-            BOARD=generic-x86_64 \
+            BOARD=x86 \
             BRANCH=${{ github.event.inputs.branch }} \
             RELEASE=${{ github.event.inputs.release }} \
             BUILD_DESKTOP=no \
@@ -62,7 +57,7 @@ jobs:
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hifios-x86_64-${{ github.run_number }}
+          name: hifios-x86-${{ github.run_number }}
           path: |
             output/images/*.img*
             output/images/*.sha
