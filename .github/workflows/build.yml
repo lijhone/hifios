@@ -1,0 +1,65 @@
+name: Armbian HiFi Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-x86:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360  # 6小时超时（免费版上限）
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libssl-dev \
+            bc \
+            flex \
+            bison \
+            libelf-dev \
+            qemu-user-static \
+            binfmt-support
+
+      - name: Build x86 image
+        run: |
+          ./compile.sh \
+            BOARD=x86 \
+            BRANCH=current \
+            RELEASE=bookworm \
+            BUILD_DESKTOP=no \
+            KERNEL_CONFIGURE=no
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: armbian-x86-hifi
+          path: output/images/*.img
+          retention-days: 7  # 免费版最多保留7天
+
+  # 注意：S905 系列构建需单独创建 job，示例如下（需替换具体 BOARD 值）
+  # build-s905:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - uses: actions/checkout@v7
+  #     - name: Install deps
+  #       run: sudo apt-get install -y build-essential ...
+  #     - name: Build S905 image
+  #       run: |
+  #         ./compile.sh \
+  #           BOARD=aml-s905w \  # 替换为你的 S905 具体型号（如 aml-s905l3a）
+  #           BRANCH=current \
+  #           RELEASE=bookworm \
+  #           BUILD_DESKTOP=no
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: armbian-s905-hifi
+  #         path: output/images/*.img
