@@ -1,24 +1,24 @@
 name: Build HiFiOS x86_64
 
 on:
-  workflow_dispatch:          # 手动触发，方便调试
+  workflow_dispatch:
     inputs:
       release:
-        description: 'Debian/Ubuntu release'
+        description: "Debian/Ubuntu release"
         required: true
-        default: 'trixie'
+        default: "trixie"
         type: choice
-        options: [trixie, bookworm]
+        options:
+          - trixie
+          - bookworm
       branch:
-        description: 'Kernel branch'
+        description: "Kernel branch"
         required: true
-        default: 'current'
+        default: "current"
         type: choice
-        options: [current, edge]
-
-  # 可选：push 到 x86-build 分支自动编
-  # push:
-  #   branches: [x86-build]
+        options:
+          - current
+          - edge
 
 jobs:
   build:
@@ -27,30 +27,35 @@ jobs:
 
     steps:
       - name: Checkout hifios
-        uses: actions/checkcript@v4
+        uses: actions/checkout@v4
         with:
           repository: lijhone/hifios
-          ref: main            # 你自己的默认分支名，按需改
+          ref: main
           fetch-depth: 1
 
-      # Armbian build 需要 root + 一些 sysctl，docker 方式是官方推荐的 CI 路径
-      - name: Build image via Armbian container
+      - name: Free disk space
+        run: |
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /opt/ghc \
+            /opt/hostedtoolcache \
+            /usr/local/lib/android
+
+      - name: Build HiFiOS image
         run: |
           set -e
-          mkdir -p output
           chmod +x compile.sh
 
           ./compile.sh \
             BOARD=generic-x86_64 \
-            BRANCH=${{ github.event.inputs.branch || 'current' }} \
-            RELEASE=${{ github.event.inputs.release || 'trixie' }} \
+            BRANCH=${{ github.event.inputs.branch }} \
+            RELEASE=${{ github.event.inputs.release }} \
             BUILD_DESKTOP=no \
             BUILD_MINIMAL=yes \
             ENABLE_EXTENSIONS=hifios \
             COMPILE_MORE_TOOLS=no \
             SHOW_LEAVES=no \
             CLEAN_LEVEL="none" \
-            ROOTFS_TYPE=btrfs \
             KERNEL_CONFIGURE=no \
             2>&1 | tee build.log
 
