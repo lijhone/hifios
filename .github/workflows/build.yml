@@ -36,8 +36,9 @@ jobs:
             BRANCH=current \
             RELEASE=bookworm \
             BUILD_DESKTOP=no \
-            KERNEL_CONFIGURE=no
-
+            KERNEL_CONFIGURE=no \
+            ENABLE_EXTENSIONS=hifios
+            
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
